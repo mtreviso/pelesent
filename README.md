@@ -1,2 +1,2 @@
-# Quora question pairs
-q1 = q2?
+# Pelesent
+sent(twit) = +/-?
