@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class RCNN(NeuralNetwork):
 
-	def build(self, nb_filter=100, filter_length=7, stride=1, pool_length=3, cnn_activation='relu', 
+	def build(self, nb_filter=200, filter_length=7, stride=1, pool_length=3, cnn_activation='relu', 
 					nb_hidden=200, rnn='LSTM', rnn_activation='sigmoid', dropout_rate=0.5, verbose=True):
 		
 		logger.info('Building...')
@@ -24,19 +24,17 @@ class RCNN(NeuralNetwork):
 		sequence 		= Input(name='input_source', shape=(self.input_length, ), dtype='int32')
 		embedded 		= Embedding(self.emb_vocab_size, self.emb_size, input_length=self.input_length, weights=[self.emb_weights])(sequence)
 		
-		drop 			= Dropout(dropout_rate)(embedded)
+		cnn1d 			= Conv1D(nb_filter, filter_length, activation=cnn_activation)(embedded)
+		maxpooling 		= MaxPooling1D(pool_length)(cnn1d)
 		
-		cnn1d_pad 		= ZeroPadding1D(padding)(drop)
-		cnn1d 			= Convolution1D(nb_filter=nb_filter, filter_length=filter_length, activation=cnn_activation, 
-										subsample_length=stride, border_mode='valid')(cnn1d_pad)
-	
-		maxpooling_pad 	= ZeroPadding1D(pool_padding)(cnn1d)
-		maxpooling 		= MaxPooling1D(pool_length=pool_length, border_mode='valid', stride=stride)(maxpooling_pad)
-
 		forward_rnn 	= RNN(nb_hidden, activation=rnn_activation)(maxpooling)
-		output 			= Dense(output_dim=self.nb_classes, activation='softmax', name='output_source')(forward_rnn)
+		backward_rnn 	= RNN(nb_hidden, go_backwards=True, activation=rnn_activation)(maxpooling)
+		merge_rnn 		= Add()([forward_rnn, backward_rnn])
+		drop 			= Dropout(dropout_rate)(merge_rnn)
+
+		output 			= Dense(self.nb_classes, activation='softmax', name='output_source')(drop)
 		
-		self.classifier = Model(input=[sequence], output=output)
+		self.classifier = Model(inputs=[sequence], outputs=output)
 
 		logger.info('Compiling...')
 		self._compile()

@@ -12,19 +12,19 @@ from sklearn.model_selection import KFold
 
 from pelesent import __prog__, __title__, __summary__, __uri__, __version__
 from pelesent.log import configure_stream
-from pelesent.utils import unroll, vectorize
+from pelesent.utils import unroll, vectorize, unvectorize, pad_sequences
 from pelesent.models import get_model
 from pelesent.embeddings import AvailableEmbeddings
 from pelesent.error_analysis import ErrorAnalysis
 
 LOG_DIR 		= 'data/log/'
 SUBMISSION_DIR 	= 'data/sub/'
-TRAIN_POS_FILE 	= 'data/filtro_emojis.pos'
-TRAIN_NEG_FILE 	= 'data/filtro_emojis.neg'
+TRAIN_POS_FILE 	= 'data/corpora/buscape2_fixed.pos'
+TRAIN_NEG_FILE 	= 'data/corpora/buscape2_fixed.neg'
 EMB_TYPE 		= 'word2vec'
-EMB_FILE		= 'data/embs/w2v-twitter-skip-50.model'
+EMB_FILE		= 'data/embs/w2v-twitter-skip-300.model'
 FOLDS 			= 10
-EPOCHS			= 20
+EPOCHS			= 5
 BATCH_SIZE 		= 32
 MODEL_NAME 		= 'RCNN'
 TRAIN_STRATEGY	= 'bucket'
@@ -114,9 +114,13 @@ def run(options):
 	model = None
 
 	for k, (train_index, test_index) in enumerate(kf.split(X)):
+		logger.info('\n---------\n')
 		logger.info('K fold: {}'.format(k+1))
 		X_train, X_test = X[train_index], X[test_index]
 		Y_train, Y_test = Y[train_index], Y[test_index]
+
+		X_train = pad_sequences(X_train, maxlen=max_sent_size)
+		X_test = pad_sequences(X_test, maxlen=max_sent_size)
 
 		model = get_model(MODEL_NAME, vocabulary=vocab, emb_model=emb_model, batch_size=BATCH_SIZE,
 										input_length=input_length, nb_classes=2, strategy=TRAIN_STRATEGY)
@@ -124,9 +128,6 @@ def run(options):
 		model.train(X_train, Y_train, X_test, Y_test, nb_epoch=EPOCHS, verbose=True)
 
 		Y_pred = model.predict(X_test, verbose=True)
-		print(Y_test.shape)
-		print(Y_pred.shape)
-
 		ea.count(unvectorize(Y_pred), unvectorize(Y_test))
 		ea.report()
 

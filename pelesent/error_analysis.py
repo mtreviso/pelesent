@@ -24,7 +24,14 @@ class ErrorAnalysis:
 		logger.debug('Gold neg  |   %8d   |   %8d   |' % (self.fp, self.tn))
 		logger.debug('----------+--------------+--------------+')
 
+		self.prec = self.tp / (self.tp + self.fp)
+		self.rec = self.tp / (self.tp + self.fn)
+		self.f1 = 2 * self.prec * self.rec / (self.prec + self.rec)
 		self.nist_er = (self.fn + self.fp)/(self.fn + self.tp) # SER
 		self.acc = (self.tp + self.tn) / (self.tp + self.tn + self.fp + self.fn) 
+
 		logger.debug('SER: %.4f' % self.nist_er)
+		logger.debug('Prec: %.4f' % self.prec)
+		logger.debug('Rec: %.4f' % self.rec)
+		logger.debug('F1: %.4f' % self.f1)
 		logger.debug('Acc: %.4f' % self.acc)

@@ -16,25 +16,20 @@ class MLP(NeuralNetwork):
 		
 		logger.info('Building...')
 		inputs = []
+		padding = filter_length // 2
+		pool_padding = pool_length // 2
+
 		RNN = LSTM if rnn == 'LSTM' else GRU
 		
-		sequence = Input(name='input_source', shape=(self.input_length,), dtype='int32')
-		embedded = Embedding(self.emb_vocab_size, self.emb_size, input_length=self.input_length, weights=[self.emb_weights])(sequence)
-		inputs.append(sequence)
-
-		cnn1d_pad 		= ZeroPadding1D(padding)(embedded)
-		cnn1d 			= Convolution1D(nb_filter=nb_filter, filter_length=filter_length, activation=cnn_activation, 
-										subsample_length=stride, border_mode='valid')(cnn1d_pad)
-	
-		maxpooling_pad 	= ZeroPadding1D(pool_padding)(cnn1d)
-		maxpooling 		= MaxPooling1D(pool_length=pool_length, border_mode='valid', stride=stride)(maxpooling_pad)
-
-		forward_rnn 	= RNN(nb_hidden, return_sequences=True, activation=rnn_activation)(maxpooling)
-		backward_rnn 	= RNN(nb_hidden, return_sequences=True, go_backwards=True, activation=rnn_activation)(maxpooling)
-		merge_rnn 		= merge([forward_rnn, backward_rnn], mode='sum', concat_axis=-1)
-		drop 			= Dropout(dropout_rate)(merge_rnn)
-		outputs 		= TimeDistributed(Dense(output_dim=self.nb_classes, activation='softmax'), name='output_source')(drop)
-		self.classifier = Model(input=inputs, output=outputs)
+		sequence 		= Input(name='input_source', shape=(self.input_length, ), dtype='int32')
+		embedded 		= Embedding(self.emb_vocab_size, self.emb_size, input_length=self.input_length, weights=[self.emb_weights])(sequence)
+		drop 			= Dropout(dropout_rate)(embedded)
+		maxp 			= GlobalAveragePooling1D()(drop)
+		dense 			= Dense(nb_hidden)(maxp)
+		dense 			= Dense(nb_hidden)(dense)
+		output 			= Dense(output_dim=self.nb_classes, activation='softmax', name='output_source')(dense)
+		
+		self.classifier = Model(input=[sequence], output=output)
 
 		logger.info('Compiling...')
 		self._compile()

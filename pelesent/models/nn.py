@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import sys
 import numpy as np
 import logging
 
@@ -79,12 +80,12 @@ class NeuralNetwork(metaclass=ABCMeta):
 			val_buckets 	= bucketize(X_val, max_bucket_size=self.batch_size)
 			val_generator	= self._get_batch(X_val, Y_val, *val_buckets, shuffle=False)
 			print('fitting :)')
-			self.classifier.fit_generator(train_generator, samples_per_epoch=len(train_buckets[0]),
-												validation_data=val_generator, nb_val_samples=len(Y_val),
-												nb_epoch=nb_epoch, class_weight=class_weight, callbacks=callbacks)
+			self.classifier.fit_generator(train_generator, steps_per_epoch=len(train_buckets[0]),
+												validation_data=val_generator, validation_steps=len(val_buckets[0]),
+												epochs=nb_epoch, class_weight=class_weight, callbacks=callbacks)
 		else:
-			self.classifier.fit(X_train, Y_train, nb_epoch=nb_epoch, batch_size=self.batch_size, 
-									validation_data=val_data, class_weight=class_weight, callbacks=callbacks)
+			self.classifier.fit(X_train, Y_train, epochs=nb_epoch, batch_size=self.batch_size, 
+									validation_data=(X_val, Y_val), class_weight=class_weight, callbacks=callbacks)
 
 
 	def _predict_on_batch(self, generator, val_samples, verbose=False):
@@ -93,7 +94,7 @@ class NeuralNetwork(metaclass=ABCMeta):
 		preds = []
 		if verbose:
 			print('')
-		for i, (X, Y, _) in enumerate(generator):
+		for i, (X, Y) in enumerate(generator):
 			if verbose:
 				sys.stdout.write('Prediction %d/%d \r' % (i+1, val_samples))
 				sys.stdout.flush()
@@ -105,7 +106,7 @@ class NeuralNetwork(metaclass=ABCMeta):
 	def predict(self, X_test, verbose=False):
 		if self.strategy == 'bucket':
 			lengths, data_by_length = bucketize(X_test, max_bucket_size=self.batch_size)
-			pred_generator = self.model.get_batch(X_test, X_test, lengths, data_by_length, shuffle=False, kind='predict')
+			pred_generator = self._get_batch(X_test, X_test, lengths, data_by_length, shuffle=False, kind='predict')
 			preds = self._predict_on_batch(pred_generator, len(data_by_length), verbose=verbose)
 			preds, _ = reorder_buckets(preds, preds, lengths, data_by_length)
 		else:
