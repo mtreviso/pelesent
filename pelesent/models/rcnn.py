@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class RCNN(NeuralNetwork):
 
 	def build(self, nb_filter=200, filter_length=7, stride=1, pool_length=3, cnn_activation='relu', 
-					nb_hidden=200, rnn='LSTM', rnn_activation='sigmoid', dropout_rate=0.5, verbose=True):
+					nb_hidden=100, rnn='LSTM', rnn_activation='tanh', dropout_rate=0.5, verbose=True):
 		
 		logger.info('Building...')
 		inputs = []
@@ -31,7 +31,6 @@ class RCNN(NeuralNetwork):
 		backward_rnn 	= RNN(nb_hidden, go_backwards=True, activation=rnn_activation)(maxpooling)
 		merge_rnn 		= Add()([forward_rnn, backward_rnn])
 		drop 			= Dropout(dropout_rate)(merge_rnn)
-
 		output 			= Dense(self.nb_classes, activation='softmax', name='output_source')(drop)
 		
 		self.classifier = Model(inputs=[sequence], outputs=output)
