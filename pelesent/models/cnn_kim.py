@@ -4,6 +4,7 @@ from pprint import pformat
 
 from keras.models import Model
 from keras.layers import *
+from keras.constraints import maxnorm
 
 from pelesent.models import NeuralNetwork
 
@@ -24,16 +25,18 @@ class CNN(NeuralNetwork):
         embedded = Embedding(self.emb_vocab_size, self.emb_size,
                              input_length=self.input_length,
                              weights=[self.emb_weights])(sequence)
-        drop = Dropout(dropout_rate)(embedded)
         conv_blocks = []
         for filter in filter_length:
             cnn1d = Convolution1D(nb_filter=nb_filter, filter_length=filter,
-                                  activation='relu', subsample_length=stride)(drop)
+                                  activation='relu', subsample_length=stride,
+                                  kernel_constraint=maxnorm(3.))(embedded)
+            conv = GlobalMaxPooling1D()(cnn1d)
             conv = Flatten()(cnn1d)
             conv_blocks.append(conv)
         maxp = Concatenate()(conv_blocks) if len(conv_blocks) > 1 else conv_blocks[0]
+        drop = Dropout(dropout_rate)(maxp)
         output = Dense(output_dim=self.nb_classes, activation='softmax',
-                       name='output_source')(maxp)
+                       name='output_source')(drop)
 
         self.classifier = Model(input=[sequence], output=output)
         logger.info('Compiling...')
