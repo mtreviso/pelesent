@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
+np.random.seed(1)
 
 def unroll(list_of_lists, rec=False):
 	"""

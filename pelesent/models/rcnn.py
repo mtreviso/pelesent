@@ -23,15 +23,19 @@ class RCNN(NeuralNetwork):
 		
 		sequence 		= Input(name='input_source', shape=(self.input_length, ), dtype='int32')
 		embedded 		= Embedding(self.emb_vocab_size, self.emb_size, input_length=self.input_length, weights=[self.emb_weights])(sequence)
+		drop1 			= Dropout(dropout_rate)(embedded)
+
+		cnn1d_pad 		= ZeroPadding1D(padding)(drop1)
+		cnn1d 			= Conv1D(nb_filter, filter_length, activation=cnn_activation)(cnn1d_pad)
+
+		maxpooling_pad 	= ZeroPadding1D(pool_padding)(cnn1d)
+		maxpooling 		= MaxPooling1D(pool_length)(maxpooling_pad)
 		
-		cnn1d 			= Conv1D(nb_filter, filter_length, activation=cnn_activation)(embedded)
-		maxpooling 		= MaxPooling1D(pool_length)(cnn1d)
-		
-		forward_rnn 	= RNN(nb_hidden, activation=rnn_activation)(maxpooling)
-		backward_rnn 	= RNN(nb_hidden, go_backwards=True, activation=rnn_activation)(maxpooling)
+		forward_rnn 	= RNN(nb_hidden, activation=rnn_activation, dropout=dropout_rate, implementation=2)(maxpooling)
+		backward_rnn 	= RNN(nb_hidden, go_backwards=True, activation=rnn_activation, dropout=dropout_rate, implementation=2)(maxpooling)
 		merge_rnn 		= Add()([forward_rnn, backward_rnn])
-		drop 			= Dropout(dropout_rate)(merge_rnn)
-		output 			= Dense(self.nb_classes, activation='softmax', name='output_source')(drop)
+		# drop 			= Dropout(dropout_rate)(merge_rnn)
+		output 			= Dense(self.nb_classes, activation='softmax', name='output_source')(merge_rnn)
 		
 		self.classifier = Model(inputs=[sequence], outputs=output)
 

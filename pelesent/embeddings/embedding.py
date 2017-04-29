@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
 
+np.random.seed(1)
 
 class Embedding(metaclass=ABCMeta):
 
