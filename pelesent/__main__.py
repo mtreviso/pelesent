@@ -19,12 +19,8 @@ from pelesent.error_analysis import ErrorAnalysis
 
 LOG_DIR 		= 'data/log/'
 SUBMISSION_DIR 	= 'data/sub/'
-# TRAIN_POS_FILE 	= 'data/corpora/CLEAN_buscape2.pos'
-# TRAIN_NEG_FILE  = 'data/corpora/CLEAN_buscape2.neg'
-# EMB_TYPE 		= 'word2vec'
-# EMB_FILE		= 'data/embs/w2v-twitter-skip-300.model'
 FOLDS 			= 10
-EPOCHS			= 5
+EPOCHS			= 10
 BATCH_SIZE 		= 128
 MODEL_NAME 		= 'RCNN'
 TRAIN_STRATEGY	= 'bucket'
@@ -50,13 +46,13 @@ def load_options():
 	return parser.parse_args()
 
 
-def load_data(pos_file, neg_file, vocab):
+def load_data(pos_file, neg_file, vocab, mss=4):
 	# detectar risadas?
 	data_pos, data_neg = [], []
 	with open(pos_file, 'r', encoding='utf8') as f:
 		for line in f:
 			tks = line.strip().split()
-			if len(tks) >= MIN_SENT_SIZE:
+			if len(tks) >= mss:
 				data_pos.append(tks)
 				for word in data_pos[-1]:
 					if word not in vocab:
@@ -64,7 +60,7 @@ def load_data(pos_file, neg_file, vocab):
 	with open(neg_file, 'r', encoding='utf8') as f:
 		for line in f:
 			tks = line.strip().split()
-			if len(tks) >= MIN_SENT_SIZE:
+			if len(tks) >= mss:
 				data_neg.append(tks)
 				for word in data_neg[-1]:
 					if word not in vocab:
@@ -120,7 +116,7 @@ def run(options):
 	vocab = {}
 
 	logger.info('Loading data...')
-	data_pos, data_neg = load_data(options.pos_file, options.neg_file, vocab)
+	data_pos, data_neg = load_data(options.pos_file, options.neg_file, vocab, mss=MIN_SENT_SIZE)
 
 	logger.info('Loading embeddings...')
 	emb_model = load_emb_model(options)
@@ -129,7 +125,7 @@ def run(options):
 	show_stats(data_pos, data_neg, emb_model, vocab)
 
 	if options.test_pos_file is not None:
-		test_data_pos, test_data_neg = load_data(options.test_pos_file, options.test_neg_file, vocab)
+		test_data_pos, test_data_neg = load_data(options.test_pos_file, options.test_neg_file, vocab, mss=1)
 
 		logger.info('Test stats:')
 		show_stats(test_data_pos, test_data_neg, emb_model, vocab)
