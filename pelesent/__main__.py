@@ -119,8 +119,9 @@ def run(options):
 		X_train, X_test = X[train_index], X[test_index]
 		Y_train, Y_test = Y[train_index], Y[test_index]
 
-		X_train = pad_sequences(X_train, maxlen=max_sent_size)
-		X_test = pad_sequences(X_test, maxlen=max_sent_size)
+		if TRAIN_STRATEGY == 'padding':
+			X_train = pad_sequences(X_train, maxlen=max_sent_size)
+			X_test = pad_sequences(X_test, maxlen=max_sent_size)
 
 		model = get_model(MODEL_NAME, vocabulary=vocab, emb_model=emb_model, batch_size=BATCH_SIZE,
 										input_length=input_length, nb_classes=2, strategy=TRAIN_STRATEGY)
