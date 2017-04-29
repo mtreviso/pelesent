@@ -12,7 +12,8 @@ class Word2Vec(Embedding):
 
 	def load(self, load_file):
 		# self.model = gensim.models.Word2Vec.load(load_file)
-		self.model = gensim.models.Word2Vec.load_word2vec_format(load_file, binary=True, unicode_errors='ignore')
+		# self.model = gensim.models.Word2Vec.load_word2vec_format(load_file, binary=True, unicode_errors='ignore')
+		self.model = gensim.models.KeyedVectors.load_word2vec_format(load_file, binary=True, unicode_errors='ignore')
 		self.dimensions = self.model.vector_size
 
 	def save(self, save_file):

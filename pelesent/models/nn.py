@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import logging
 
+np.random.seed(1)
+
 from sklearn.utils import compute_class_weight
 from pelesent.utils import unvectorize, unpad_sequences, bucketize, reorder_buckets
 from keras.callbacks import EarlyStopping
