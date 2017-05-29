@@ -40,6 +40,7 @@ def load_options():
 	parser.add_argument('--test-neg-file', type=str, help='test neg file', default=None)
 	parser.add_argument('-l', '--load', action='store_true', help='load a trained model')
 	parser.add_argument('-s', '--save', action='store_true', help='save a trained model')
+	parser.add_argument('-b', '--batch-size', type=int, default=128, help='batch size')
 	today = 'submition-%s.csv' % datetime.datetime.now().strftime('%y-%m-%d')
 	parser.add_argument('-o', '--output', default=today, type=str, help='submition filename')
 	parser.add_argument('--gpu', action='store_true', help='run on GPU instead of on CPU')
@@ -53,6 +54,8 @@ def load_data(pos_file, neg_file, vocab, mss=4):
 		for line in f:
 			tks = line.strip().split()
 			if len(tks) >= mss:
+				# if tks[0] == 'rt':
+				# 	continue
 				data_pos.append(tks)
 				for word in data_pos[-1]:
 					if word not in vocab:
@@ -61,6 +64,8 @@ def load_data(pos_file, neg_file, vocab, mss=4):
 		for line in f:
 			tks = line.strip().split()
 			if len(tks) >= mss:
+				# if tks[0] == 'rt':
+				# 	continue
 				data_neg.append(tks)
 				for word in data_neg[-1]:
 					if word not in vocab:
@@ -192,6 +197,7 @@ def cli():
 	if not os.path.exists(LOG_DIR):
 		os.makedirs(LOG_DIR)
 
+	BATCH_SIZE = int(options.batch_size)
 
 	# log_filename = __prog__
 	f = lambda x: x.split('/')[-1].split('.')[0]
