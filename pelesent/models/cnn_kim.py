@@ -30,9 +30,9 @@ class CNN(NeuralNetwork):
             cnn1d = Convolution1D(nb_filter=nb_filter, filter_length=filter,
                                   activation='relu', subsample_length=stride,
                                   kernel_constraint=maxnorm(3.))(embedded)
-            conv = GlobalMaxPooling1D()(cnn1d)
-            conv = Flatten()(cnn1d)
-            conv_blocks.append(conv)
+            maxp = MaxPool1D(pool_size=self.input_length - filter + 1)(cnn1d)
+            maxp = Flatten()(maxp)
+            conv_blocks.append(maxp)
         maxp = Concatenate()(conv_blocks) if len(conv_blocks) > 1 else conv_blocks[0]
         drop = Dropout(dropout_rate)(maxp)
         output = Dense(output_dim=self.nb_classes, activation='softmax',
